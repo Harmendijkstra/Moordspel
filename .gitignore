@@ -18,5 +18,3 @@ __pycache__/
 # Ignore file types
 *.spec
 *.png
-*.txt
-*.docx
