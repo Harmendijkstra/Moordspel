@@ -20,8 +20,6 @@ locations = ['tuin', 'woonkamer', 'keuken', 'gang',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
 
 def gui_input():
-    checked_eforms = False
-
     sg.ChangeLookAndFeel('DarkAmber')
 
     layout = [
@@ -32,18 +30,21 @@ def gui_input():
         [sg.Text('Aantal moordenaars:')],
         [sg.InputCombo(('1', '2', '3', '4', '5'), size=(20, 3), key='nr_killers')],
 
+        [sg.Text('Moordenaars kennen elkaar:')],
+        [sg.InputCombo(('Ja', 'Nee'), size=(20, 2), key='knowledge')],
+
         [sg.Text('Kies de wapens (met control kan je meer kiezen)')],
-        [sg.Listbox(values = list(weapons), select_mode='extended', key='weapons', size=(20, len(list(weapons))))],
+        [sg.Listbox(values = list(weapons), select_mode='extended', key='weapons', size=(20, 8))],
         
         [sg.Text('Kies de locaties (met control kan je meer kiezen)')],
-        [sg.Listbox(values = list(locations), select_mode='extended', key='locations', size=(20, len(list(locations))))],
+        [sg.Listbox(values = list(locations), select_mode='extended', key='locations', size=(20, 8))],
 
         [sg.Submit(font=('Times New Roman', 18)), sg.Cancel(font=('Times New Roman', 18))]
         ]
     
     form = sg.FlexForm('Moord in Loppersum', layout, default_element_size=(40, 1))
 
-    
+    #TODO, crash bij cancel!
     while True:
         event, values = form.Read()
         values['event'] = event
@@ -71,6 +72,12 @@ def gui_input():
                     event = 'Error'
                     values['exception'] = 'locations'
                     sg.Popup('oops! Je moet de locaties nog kiezen')
+                    continue
+
+                if values['knowledge'] == '':
+                    event = 'Error'
+                    values['exception'] = 'knowledge'
+                    sg.Popup('oops! Je moet opgeven of de moordenaars elkaar kennen')
                     continue
 
                 if values['nr_killers'] == '':
