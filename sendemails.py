@@ -5,6 +5,7 @@ import pandas as pd
 from random import randrange
 import random
 from pathlib import Path
+import numpy as np
 
 gui_input = create_GUI.gui_input()
 if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
@@ -14,6 +15,7 @@ if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
     weapons = gui_input['weapons']
     nr_killers = int(gui_input['nr_killers'])
     knowledge = gui_input['knowledge']
+    knowledge_people = gui_input['knowledge_people']
 
 def choose_the_murder(emails, locations, weapons, nr_killers):
     murder = {'emails': '', 'location': '', 'weapon': ''}
@@ -38,35 +40,53 @@ def choose_the_murder(emails, locations, weapons, nr_killers):
     remaining_items['weapons'] = remaining_weapons
     return murder, remaining_items
 
-def send_murder_emails(murder, item_list, weapons, emails, locations, murder_emails):
+#TODO enters in mail stoppen!
+def send_murder_emails(murder, murder_itemlist, weapons, emails, locations, murder_emails):
     for email_adress in murder['emails']:
-        extra_info = item_list[0]
+        extra_info = murder_itemlist[0]
         extra_info_str = ', '.join(extra_info)
-        del item_list[0]
+        del murder_itemlist[0]
         message = f'Gegroet inwoner van Loppersum, \
 \n \n \
 Jij bent een moordenaar! Zoek het wapen, je mede moordenaars \
 (er zijn in totaal {nr_killers} moordenaars) en de locatie zodat je de \
-moord kan plegen! Wat jij verder nog weet is dat de moord niet gepleegd word in/met/door: {extra_info_str}. \
-Dit zijn alle wapens: {weapons}, dit zijn alle locaties: {locations},  dit zijn alle emails: {emails}. '
+moord kan plegen! Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
+{extra_info_str}. \
+\n \
+Dit zijn alle wapens: \n \
+{weapons} \n \
+Dit zijn alle locaties: \n \
+{locations} \n \
+Dit zijn alle emails: \n \
+{emails}. '
         if knowledge == 'Ja':
             murder_emails_str = ', '.join(murder_emails)
-            knowledge_info = f'Dit zijn alle moordenaars: {murder_emails_str}'
+            knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
         send_email(email_adress, message)
         
-def send_detective_emails(remaining_items, item_list, weapons, emails, locations):
-    for email_adress in remaining_items['emails']:
-        extra_info = item_list[0]
+def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
+    for email_ad in other_emails:
+        print(email_ad)
+        extra_info = other_itemlist[0]
         extra_info_str = ', '.join(extra_info)
-        del item_list[0]
+        del other_itemlist[0]
         message = f'Gegroet inwoner van Loppersum, \
 \n \n \
 Jij bent geen moordenaar, zoek de {nr_killers} moordenaars in Loppersum! \
 Verder moet je het wapen en de locatie weten om zo de moord te stoppen! \
-Wat jij verder nog weet is dat de moord niet gepleegd word in/met/door: {extra_info_str}. \
-Dit zijn alle wapens: {weapons}, dit zijn alle locaties: {locations},  dit zijn alle emails: {emails}.'
-        send_email(email_adress, message)
+Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
+{extra_info_str}. \
+\n \
+Dit zijn alle wapens: \n \
+{weapons} \n \
+Dit zijn alle locaties: \n \
+{locations} \n \
+Dit zijn alle emails: \n \
+{emails}.'
+        print('Here')
+        print(email_ad)
+        send_email(email_ad, message)
 
 def flatten(full_list):
     return sum(full_list, [])
@@ -76,11 +96,9 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
         
-def shuffle_remaining_items(remaining_items):
-    all_items = flatten(list(remaining_items.values()))
-    random.shuffle(all_items)
-    return list(chunks(all_items, 3))
-
+def shuffle_remaining_items(list_to_shuffle):
+    random.shuffle(list_to_shuffle)
+    return list(chunks(list_to_shuffle, 3))
 
 def send_email(email_adress, message, subject_info=''):
     msg = email.message_from_string(message)
@@ -138,20 +156,38 @@ def save_murder(df_murder):
     writer.save()
 
 
+def create_murder_list(remaining_items):
+    random_nrs = random.sample(range(0, len(remaining_items['emails'])), int(knowledge_people))
+    non_murders = np.array(remaining_items['emails'])
+    persons_for_murders = list(non_murders[random_nrs])
+    remaining_emails = list(set(remaining_items['emails']) - set(persons_for_murders))
+    remaining_items['emails'] = remaining_emails
+    nr_other_items = (nr_killers*3) - int(knowledge_people)
+    all_items = flatten(list(remaining_items.values()))
+
+    random_nrs_rest = random.sample(range(0, len(all_items)), nr_other_items)
+    rest_items = np.array(all_items)
+    restitems_for_murders = list(rest_items[random_nrs_rest])
+    murder_itemlist = restitems_for_murders + persons_for_murders
+    other_itemlist = list(set(flatten(list(remaining_items.values()))) - set(murder_itemlist))
+    return murder_itemlist, other_itemlist
+
 murder, remaining_items = choose_the_murder(emails, locations, weapons, nr_killers)
+other_emails = list(set(emails) - set(murder['emails']))
 murder_emails = murder['emails']
 murder_weapon = murder['weapon']
 murder_location = murder['location']
-item_list = shuffle_remaining_items(remaining_items)
+
+murder_itemlist, other_itemlist = create_murder_list(remaining_items)
+
+other_itemlist = shuffle_remaining_items(other_itemlist)
+murder_itemlist = shuffle_remaining_items(murder_itemlist)
 emails_str = ', '.join(emails)
 locations_str = ', '.join(locations)
 weapons_str = ', '.join(weapons)
-send_murder_emails(murder, item_list, weapons_str, emails_str, locations_str, murder_emails)
-send_detective_emails(remaining_items, item_list, weapons_str, emails_str, locations_str)
+send_murder_emails(murder, murder_itemlist, weapons_str, emails_str, locations_str, murder_emails)
+send_detective_emails(remaining_items, other_itemlist, weapons_str, emails_str, locations_str, other_emails)
 send_murder_info(murder)
 df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
 save_murder(df_murder)
-
-if len(item_list) != 0:
-    send_email('harmen_dijkstra@hotmail.com', 'There was an error, still some items not picked')
 

@@ -36,7 +36,7 @@ def gui_input():
         [sg.Text('Kies moordenaar 1 (volgorde moordenaar maakt niet uit, kies wel verschillende):')],
         [sg.Combo(emails, size=(20, len(emails)), key='moordenaar1')],
 
-        [sg.Text('Kies moordwapen:')],
+        [sg.Text('Kies moordenaar 2:')],
         [sg.Combo(emails, size=(20, len(emails)), key='moordenaar2')],
 
         [sg.Submit(font=('Times New Roman', 18)), sg.Cancel(font=('Times New Roman', 18))]
