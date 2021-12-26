@@ -69,7 +69,7 @@ def send_murder_emails(murder, murder_itemlist, weapons, emails, locations, murd
 \n \n \
 Jij bent een moordenaar! Zoek het wapen, je mede moordenaars \
 (er zijn in totaal {nr_killers} moordenaars) en de locatie zodat je de \
-moord kan plegen! Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
+moord geheim kan houden! Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
 {extra_info_str}. \
 \n \
 Dit zijn alle wapens: \n \
@@ -96,8 +96,8 @@ def send_detective_emails(remaining_items, other_itemlist, weapons, emails, loca
         message = f'Gegroet inwoner van Loppersum, \
 \n \n \
 Jij bent geen moordenaar, zoek de {nr_killers} moordenaars in Loppersum! \
-Verder moet je het wapen en de locatie weten om zo de moord te stoppen! \
-Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
+Verder moet je het wapen en de locatie weten om zo de moordenaars te pakken! \
+Wat jij verder nog weet, is dat de moord niet gepleegd is in/met/door: \n \
 {extra_info_str}. \
 \n \
 Dit zijn alle wapens: \n \
