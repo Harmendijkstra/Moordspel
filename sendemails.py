@@ -6,6 +6,19 @@ from random import randrange
 import random
 from pathlib import Path
 import numpy as np
+from fpdf import FPDF
+
+weapons_options = ['lepel', 'vork', 'mes', 'pen', 'boek', 'pan',
+             'sleutel', 'kussen', 'kleerhanger', 'jas',
+             'potlood', 'schaar', 'schilmesje', 'schoen',
+             'beker', 'bezem', 'handdoek', 'zeep', 'beeldje',
+             'klok', 'touw', 'washand', 'corona sneltest', 'vies koekje']
+locations_options = ['tuin', 'woonkamer', 'keuken', 'gang',
+             'studeer', 'zolder', 'badkamer', 'overloop', 
+             'voor het huis', 'slaapkamer 1', 'slaapkamer 2',
+             'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
+
+
 
 gui_input = create_GUI.gui_input()
 if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
@@ -84,8 +97,6 @@ Dit zijn alle locaties: \n \
 {locations} \n \
 Dit zijn alle emails: \n \
 {emails}.'
-        print('Here')
-        print(email_ad)
         send_email(email_ad, message)
 
 def flatten(full_list):
@@ -191,3 +202,13 @@ send_murder_info(murder)
 df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
 save_murder(df_murder)
 
+
+def save_image(image_text):
+    image_dir = 'Images/'
+    image_path = image_dir + image_text + '.pdf'
+    Path(image_dir).mkdir(parents=True, exist_ok=True)
+    pdf=FPDF()
+    pdf.add_page()
+    pdf.set_font('Courier','B',16)
+    pdf.cell(40,10, image_text)
+    pdf.output(image_path,'F')

@@ -16,6 +16,7 @@ __pycache__/
 .pylint.d/
 .ipynb_checkpoints/
 Secret/
+Images/
 
 # Ignore file types
 *.spec
