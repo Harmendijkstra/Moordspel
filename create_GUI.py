@@ -9,14 +9,14 @@ Harmen Dijkstra, 29-11-2021
 import PySimpleGUI as sg
 import sys
 
-weapons = ['lepel', 'vork', 'mes', 'pen', 'boek', 'pan',
+weapons = ['lepel', 'vork', 'mes', 'pen', 'boek',
              'sleutel', 'kussen', 'kleerhanger', 'jas',
              'potlood', 'schaar', 'schilmesje', 'schoen',
              'beker', 'bezem', 'handdoek', 'zeep', 'beeldje',
              'klok', 'touw', 'washand', 'corona sneltest', 'vies koekje']
-locations = ['tuin', 'woonkamer', 'keuken', 'gang',
+locations = ['achtertuin', 'woonkamer', 'keuken', 'gang',
              'studeer', 'zolder', 'badkamer', 'overloop', 
-             'voor het huis', 'slaapkamer 1', 'slaapkamer 2',
+             'voortuin', 'slaapkamer 1', 'slaapkamer 2',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
 
 def gui_input():

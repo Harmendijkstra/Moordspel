@@ -10,15 +10,18 @@ import random
 from pathlib import Path
 import numpy as np
 from fpdf import FPDF
+from fnmatch import fnmatch
+import os
 
-weapons_options = ['lepel', 'vork', 'mes', 'pen', 'boek', 'pan',
+
+weapons = ['lepel', 'vork', 'mes', 'pen', 'boek',
              'sleutel', 'kussen', 'kleerhanger', 'jas',
              'potlood', 'schaar', 'schilmesje', 'schoen',
              'beker', 'bezem', 'handdoek', 'zeep', 'beeldje',
              'klok', 'touw', 'washand', 'corona sneltest', 'vies koekje']
-locations_options = ['tuin', 'woonkamer', 'keuken', 'gang',
+locations = ['achtertuin', 'woonkamer', 'keuken', 'gang',
              'studeer', 'zolder', 'badkamer', 'overloop', 
-             'voor het huis', 'slaapkamer 1', 'slaapkamer 2',
+             'voortuin', 'slaapkamer 1', 'slaapkamer 2',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
 
 image_dir = 'Images/'
@@ -79,7 +82,9 @@ Dit zijn alle emails: \n \
             murder_emails_str = ', '.join(murder_emails)
             knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
-        attachments = [image_dir +s + '.pdf' for s in extra_info]
+        attachments = [image_dir + s + '.pdf' for s in extra_info]
+        print('att')
+        print(attachments)
         send_email(email_adress, message, attachments)
         
 def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
@@ -101,7 +106,8 @@ Dit zijn alle locaties: \n \
 {locations} \n \
 Dit zijn alle emails: \n \
 {emails}.'
-        send_email(email_ad, message)
+        attachments = [image_dir +s + '.pdf' for s in extra_info]
+        send_email(email_ad, message, attachments)
 
 def flatten(full_list):
     return sum(full_list, [])
@@ -145,13 +151,6 @@ def send_email(email_adress, message, attachments, subject_info=''):
     s.sendmail("Moordspelinloppersum@hotmail.com", email_adress, msg.as_string())
     
     s.quit()
-
-def send_murder_info(murder):
-    email_message = f'Gegroet inwoner van Loppersum, \
-\n \n \
-Weet jij de plannen voor de moord? De plannen zijn: {murder}'
-    subject_info = 'Ultra geheim, dit zijn de plannen voor de moord!'
-    send_email('Moordspelinloppersum@hotmail.com', email_message, subject_info)
 
 def extract_murder(murder_emails, murder_weapon, murder_location):
     df_murder = pd.DataFrame(columns = ['items'])
@@ -199,23 +198,40 @@ def create_murder_list(remaining_items):
     return murder_itemlist, other_itemlist
 
 
-def save_image(image_text):
-    image_path = image_dir + image_text + '.pdf'
+def save_image(name, sentence):
+    image_path = image_dir + name + '.pdf'
     Path(image_dir).mkdir(parents=True, exist_ok=True)
     pdf=FPDF()
     pdf.add_page()
-    pdf.set_font('Courier', 'B', 60)
-    pdf.cell(40,10, image_text)
+    pdf.set_font('Courier', 'B', 15)
+    pdf.cell(40,10, sentence)
     pdf.output(image_path, 'F')
 
 def create_sentence(name):
     if name in weapons_options:
-        sentence = 'Het moordwapen is niet de ' + name
+        sentence = 'Het moordwapen is niet de/het ' + name
     elif name in locations_options:
-        sentence = 'De locatie van de moorde is niet de ' + name
+        sentence = 'De locatie van de moord is niet de ' + name
     else:
-        sentence = name + 'is niet de moordenaar'
+        sentence = name + ' is niet de moordenaar'
     return sentence
+
+
+def delete_files(directory, extension):
+    """Deletes all files in a folder with a specific extension.
+    This can be needed as tables/figures are not always overwritten letting old files still available in the output.
+    Args:
+        directory (string): The directory for which the files are deleted, example: '.\Output'.
+        extension (string): The extension, which files are deleted, example: 'xlsx'.
+        
+    Returns:
+        None
+    """
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for file in filenames:
+            if fnmatch(file, '*.' + extension):
+                os.remove(os.path.join(dirpath, file))
+
 
 murder, remaining_items = choose_the_murder(emails, locations, weapons, nr_killers)
 other_emails = list(set(emails) - set(murder['emails']))
@@ -226,7 +242,7 @@ murder_location = murder['location']
 all_pdfs_names = flatten(list(remaining_items.values()))
 for name in all_pdfs_names:
     sentence = create_sentence(name)
-    save_image(sentence)
+    save_image(name, sentence)
 
 murder_itemlist, other_itemlist = create_murder_list(remaining_items)
 
@@ -237,8 +253,8 @@ locations_str = ', '.join(locations)
 weapons_str = ', '.join(weapons)
 send_murder_emails(murder, murder_itemlist, weapons_str, emails_str, locations_str, murder_emails)
 send_detective_emails(remaining_items, other_itemlist, weapons_str, emails_str, locations_str, other_emails)
-send_murder_info(murder)
 df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
 save_murder(df_murder)
+delete_files(image_dir, 'pdf')
 
 
