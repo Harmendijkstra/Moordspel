@@ -19,11 +19,17 @@ df_murder = read_input_excel('Secretinfo.xlsx', 'Murder')
 weapons = list(df_weapons[0])
 locations = list(df_locations[0])
 emails = list(df_emails[0])
-
-
+att_sign = '@'
+which_are_murders = [att_sign in item for item in  df_murder['items']]
+nr_of_murders = sum(which_are_murders)
 
 def gui_input():
     sg.ChangeLookAndFeel('DarkAmber')
+
+    murder_block = []
+    for murd in range(1, nr_of_murders+1):
+        murder_block.append([sg.Text(f'Kies moordenaar {murd} (volgorde moordenaar maakt niet uit, kies wel verschillende):')])
+        murder_block.append([sg.Combo(emails, size=(20, len(emails)), key=f'moordenaar{murd}')])
 
     layout = [
         [sg.Text('Kies moordwapen:')],
@@ -32,12 +38,7 @@ def gui_input():
         [sg.Text('Kies locatie:')],
         [sg.Combo(locations, size=(20, len(locations)), key='locations')],
         
-        #TODO aantal moordenaars afhankelijk van input!!!
-        [sg.Text('Kies moordenaar 1 (volgorde moordenaar maakt niet uit, kies wel verschillende):')],
-        [sg.Combo(emails, size=(20, len(emails)), key='moordenaar1')],
-
-        [sg.Text('Kies moordenaar 2:')],
-        [sg.Combo(emails, size=(20, len(emails)), key='moordenaar2')],
+        murder_block,
 
         [sg.Submit(font=('Times New Roman', 18)), sg.Cancel(font=('Times New Roman', 18))]
         ]
@@ -73,30 +74,25 @@ def gui_input():
                     sg.Popup('oops! Je moet de locaties nog kiezen')
                     continue
 
-                if values['moordenaar1'] == '':
+                if '' in list(values.values()):
                     event = 'Error'
-                    values['exception'] = 'moordenaar1'
-                    sg.Popup('oops! Je moet moordenaar 1 nog kiezen')
+                    values['exception'] = 'moordenaar ont'
+                    sg.Popup('oops! Je moet alle moordenaars invullen!')
                     continue
 
-                if values['moordenaar2'] == '':
-                    event = 'Error'
-                    values['exception'] = 'moordenaar2'
-                    sg.Popup('oops! Je moet moordenaar 2 nog kiezen')
-                    continue
-
-                if values['moordenaar1'] == values['moordenaar2']:
+                all_values = list(values.values())
+                if (len(set(all_values)) != len(all_values)):
                     event = 'Error'
                     values['exception'] = 'verschillende'
                     sg.Popup('oops! Je moet verschillende moordenaars kiezen!')
                     continue
 
-                correct_weapon = values['weapons'] in list(df_murder['items'])
-                correct_location = values['locations'] in list(df_murder['items'])
-                correct_moordenaar1 = values['moordenaar1'] in list(df_murder['items'])
-                correct_moordenaar2 = values['moordenaar2'] in list(df_murder['items'])
-                if correct_weapon & correct_location & correct_moordenaar1 & correct_moordenaar2:
-                    sg.Popup('Helemaal correct! Je hebt de moord gepleegd of voorkomen!')
+                correct_murder = list(df_murder['items'])
+                exclude_keys = ['event', 'exception']
+                guessed_murder = {k: values[k] for k in set(list(values.keys())) - set(exclude_keys)}
+                guessed_murder_list = list(guessed_murder.values())
+                if set(guessed_murder_list) == set(correct_murder):
+                    sg.Popup('Helemaal correct! Je hebt de moord opgelost of je bent ontsnapt!')
                 else:
                     sg.Popup('Helaas, één of meerdere van je keuzes waren incorrect. Je mag in dit spel niet nogmaals raden.')
 

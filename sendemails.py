@@ -83,13 +83,10 @@ Dit zijn alle emails: \n \
             knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
         attachments = [image_dir + s + '.pdf' for s in extra_info]
-        print('att')
-        print(attachments)
         send_email(email_adress, message, attachments)
         
 def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
     for email_ad in other_emails:
-        print(email_ad)
         extra_info = other_itemlist[0]
         extra_info_str = ', '.join(extra_info)
         del other_itemlist[0]
