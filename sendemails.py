@@ -1,4 +1,7 @@
-import email
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
 import smtplib
 import create_GUI
 import pandas as pd
@@ -18,7 +21,7 @@ locations_options = ['tuin', 'woonkamer', 'keuken', 'gang',
              'voor het huis', 'slaapkamer 1', 'slaapkamer 2',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
 
-
+image_dir = 'Images/'
 
 gui_input = create_GUI.gui_input()
 if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
@@ -76,7 +79,8 @@ Dit zijn alle emails: \n \
             murder_emails_str = ', '.join(murder_emails)
             knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
-        send_email(email_adress, message)
+        attachments = [image_dir +s + '.pdf' for s in extra_info]
+        send_email(email_adress, message, attachments)
         
 def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
     for email_ad in other_emails:
@@ -111,8 +115,8 @@ def shuffle_remaining_items(list_to_shuffle):
     random.shuffle(list_to_shuffle)
     return list(chunks(list_to_shuffle, 3))
 
-def send_email(email_adress, message, subject_info=''):
-    msg = email.message_from_string(message)
+def send_email(email_adress, message, attachments, subject_info=''):
+    msg = MIMEMultipart()
     msg['From'] = "Moordspelinloppersum@hotmail.com"
     msg['To'] = email_adress
     if subject_info == '':
@@ -122,6 +126,17 @@ def send_email(email_adress, message, subject_info=''):
         
     
     s = smtplib.SMTP("smtp.live.com",587)
+
+    msg.attach(MIMEText(message))
+    for path in attachments:
+        part = MIMEBase('application', "octet-stream")
+        with open(path, 'rb') as file:
+            part.set_payload(file.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition',
+                        'attachment; filename={}'.format(Path(path).name))
+        msg.attach(part)
+
     s.ehlo() # Hostname to send for this command defaults to the fully qualified domain name of the local host.
     s.starttls() #Puts connection to SMTP server in TLS mode
     s.ehlo()
@@ -183,11 +198,35 @@ def create_murder_list(remaining_items):
     other_itemlist = list(set(flatten(list(remaining_items.values()))) - set(murder_itemlist))
     return murder_itemlist, other_itemlist
 
+
+def save_image(image_text):
+    image_path = image_dir + image_text + '.pdf'
+    Path(image_dir).mkdir(parents=True, exist_ok=True)
+    pdf=FPDF()
+    pdf.add_page()
+    pdf.set_font('Courier', 'B', 60)
+    pdf.cell(40,10, image_text)
+    pdf.output(image_path, 'F')
+
+def create_sentence(name):
+    if name in weapons_options:
+        sentence = 'Het moordwapen is niet de ' + name
+    elif name in locations_options:
+        sentence = 'De locatie van de moorde is niet de ' + name
+    else:
+        sentence = name + 'is niet de moordenaar'
+    return sentence
+
 murder, remaining_items = choose_the_murder(emails, locations, weapons, nr_killers)
 other_emails = list(set(emails) - set(murder['emails']))
 murder_emails = murder['emails']
 murder_weapon = murder['weapon']
 murder_location = murder['location']
+
+all_pdfs_names = flatten(list(remaining_items.values()))
+for name in all_pdfs_names:
+    sentence = create_sentence(name)
+    save_image(sentence)
 
 murder_itemlist, other_itemlist = create_murder_list(remaining_items)
 
@@ -203,12 +242,3 @@ df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
 save_murder(df_murder)
 
 
-def save_image(image_text):
-    image_dir = 'Images/'
-    image_path = image_dir + image_text + '.pdf'
-    Path(image_dir).mkdir(parents=True, exist_ok=True)
-    pdf=FPDF()
-    pdf.add_page()
-    pdf.set_font('Courier','B',16)
-    pdf.cell(40,10, image_text)
-    pdf.output(image_path,'F')
