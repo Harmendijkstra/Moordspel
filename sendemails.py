@@ -14,12 +14,12 @@ from fnmatch import fnmatch
 import os
 
 
-weapons = ['lepel', 'vork', 'mes', 'pen', 'boek',
+weapons_options = ['lepel', 'vork', 'mes', 'pen', 'boek',
              'sleutel', 'kussen', 'kleerhanger', 'jas',
              'potlood', 'schaar', 'schilmesje', 'schoen',
              'beker', 'bezem', 'handdoek', 'zeep', 'beeldje',
              'klok', 'touw', 'washand', 'corona sneltest', 'vies koekje']
-locations = ['achtertuin', 'woonkamer', 'keuken', 'gang',
+locations_options = ['achtertuin', 'woonkamer', 'keuken', 'gang',
              'studeer', 'zolder', 'badkamer', 'overloop', 
              'voortuin', 'slaapkamer 1', 'slaapkamer 2',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
