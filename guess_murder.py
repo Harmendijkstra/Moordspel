@@ -57,8 +57,6 @@ def gui_input():
             break
             
         elif event == 'Submit':
-            chosen_weapon = values['weapons']
-            chosen_location = values['weapons']
 
             try: 
                 if values['weapons'] == '':
