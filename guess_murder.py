@@ -59,8 +59,7 @@ def gui_input():
         elif event == 'Submit':
             chosen_weapon = values['weapons']
             chosen_location = values['weapons']
-            chosen_moordenaar1 = values['moordenaar1']
-            chosen_moordenaar2 = values['moordenaar2']
+
             try: 
                 if values['weapons'] == '':
                     event = 'Error'
