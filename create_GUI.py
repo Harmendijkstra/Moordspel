@@ -32,6 +32,9 @@ def gui_input():
 
         [sg.Text('Tenminste x personen bij de moordenaars:')],
         [sg.InputCombo(('1', '2', '3', '4', '5'), size=(20, 3), key='knowledge_people')],
+        
+        [sg.Text('Maximaal x personen bij niet moordenaars:')],
+        [sg.InputCombo(('1', '2', '3', '4', '5'), size=(20, 3), key='max_persons')],
 
         [sg.Text('Moordenaars kennen elkaar:')],
         [sg.InputCombo(('Ja', 'Nee'), size=(20, 2), key='knowledge')],
@@ -81,6 +84,12 @@ def gui_input():
                     event = 'Error'
                     values['exception'] = 'knowledge'
                     sg.Popup('oops! Je moet opgeven of de moordenaars elkaar kennen')
+                    continue
+
+                if values['max_persons'] == '':
+                    event = 'Error'
+                    values['exception'] = 'max_persons'
+                    sg.Popup('oops! Je moet maximaal x aantal personen bij de niet moordenaars opgeven.')
                     continue
 
                 if values['knowledge_people'] == '':

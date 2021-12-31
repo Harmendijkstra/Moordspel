@@ -35,6 +35,7 @@ if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
     nr_killers = int(gui_input['nr_killers'])
     knowledge = gui_input['knowledge']
     knowledge_people = gui_input['knowledge_people']
+    max_persons = int(gui_input['max_persons'])
 
 def choose_the_murder(emails, locations, weapons, nr_killers):
     murder = {'emails': '', 'location': '', 'weapon': ''}
@@ -83,7 +84,7 @@ Dit zijn alle emails: \n \
             knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
         attachments = [image_dir + s + '.pdf' for s in extra_info]
-        send_email(email_adress, message, attachments)
+        send_email(email_adress, message, attachments = attachments)
         
 def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
     for email_ad in other_emails:
@@ -104,7 +105,7 @@ Dit zijn alle locaties: \n \
 Dit zijn alle emails: \n \
 {emails}.'
         attachments = [image_dir +s + '.pdf' for s in extra_info]
-        send_email(email_ad, message, attachments)
+        send_email(email_ad, message, attachments = attachments)
 
 def flatten(full_list):
     return sum(full_list, [])
@@ -114,11 +115,27 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
         
-def shuffle_remaining_items(list_to_shuffle):
-    random.shuffle(list_to_shuffle)
-    return list(chunks(list_to_shuffle, 3))
+def shuffle_remaining_items(list_to_shuffle, max_persons):
+    tries = 0
+    while tries < 10:
+        random.shuffle(list_to_shuffle)
+        list_chunks = list(chunks(list_to_shuffle, 3))
+        tomany_emails = False
+        for sublist in list_chunks:
+            nr_emails = sum([el.count('@') for el in sublist])
+            if nr_emails > 1:
+                tomany_emails = True
+                continue
+        if tomany_emails == False:
+            break
+        tries += 1
+    if tries == 10:
+        message = f'persons max {max_persons} is not valid'
+        email_adress = 'harmen_dijkstra@hotmail.com'
+        send_email(email_adress, message)
+    return list_chunks
 
-def send_email(email_adress, message, attachments, subject_info=''):
+def send_email(email_adress, message, attachments=[], subject_info=''):
     msg = MIMEMultipart()
     msg['From'] = "Moordspelinloppersum@hotmail.com"
     msg['To'] = email_adress
@@ -131,14 +148,16 @@ def send_email(email_adress, message, attachments, subject_info=''):
     s = smtplib.SMTP("smtp.live.com",587)
 
     msg.attach(MIMEText(message))
-    for path in attachments:
-        part = MIMEBase('application', "octet-stream")
-        with open(path, 'rb') as file:
-            part.set_payload(file.read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        'attachment; filename={}'.format(Path(path).name))
-        msg.attach(part)
+    
+    if len(attachments) != 0:
+        for path in attachments:
+            part = MIMEBase('application', "octet-stream")
+            with open(path, 'rb') as file:
+                part.set_payload(file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                            'attachment; filename={}'.format(Path(path).name))
+            msg.attach(part)
 
     s.ehlo() # Hostname to send for this command defaults to the fully qualified domain name of the local host.
     s.starttls() #Puts connection to SMTP server in TLS mode
@@ -243,8 +262,8 @@ for name in all_pdfs_names:
 
 murder_itemlist, other_itemlist = create_murder_list(remaining_items)
 
-other_itemlist = shuffle_remaining_items(other_itemlist)
-murder_itemlist = shuffle_remaining_items(murder_itemlist)
+other_itemlist = shuffle_remaining_items(other_itemlist, max_persons)
+murder_itemlist = shuffle_remaining_items(murder_itemlist, max_persons+1)
 emails_str = ', '.join(emails)
 locations_str = ', '.join(locations)
 weapons_str = ', '.join(weapons)
