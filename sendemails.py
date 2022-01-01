@@ -115,7 +115,7 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
         
-def shuffle_remaining_items(list_to_shuffle, max_persons):
+def shuffle_remaining_items(list_to_shuffle, max_persons, murderslist=False):
     tries = 0
     while tries < 10:
         random.shuffle(list_to_shuffle)
@@ -123,16 +123,17 @@ def shuffle_remaining_items(list_to_shuffle, max_persons):
         tomany_emails = False
         for sublist in list_chunks:
             nr_emails = sum([el.count('@') for el in sublist])
-            if nr_emails > 1:
+            if nr_emails > max_persons:
                 tomany_emails = True
                 continue
         if tomany_emails == False:
             break
         tries += 1
     if tries == 10:
-        message = f'persons max {max_persons} is not valid'
-        email_adress = 'harmen_dijkstra@hotmail.com'
-        send_email(email_adress, message)
+        if murderslist:
+            raise ValueError(f'It is not possible to shuffle the list {list_to_shuffle} such that there are at max {max_persons} persons per player')
+        else:
+            raise ValueError(f'It is not possible to shuffle the list {list_to_shuffle} for the murders such that there are at max {max_persons} persons per murderer')
     return list_chunks
 
 def send_email(email_adress, message, attachments=[], subject_info=''):
