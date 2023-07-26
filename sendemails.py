@@ -146,7 +146,7 @@ def send_email(email_adress, message, attachments=[], subject_info=''):
         msg['Subject'] = subject_info
         
     
-    s = smtplib.SMTP("smtp.live.com",587)
+    s = smtplib.SMTP("smtp.office365.com", 587, timeout=120)
 
     msg.attach(MIMEText(message))
     
