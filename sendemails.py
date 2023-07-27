@@ -12,30 +12,20 @@ import numpy as np
 from fpdf import FPDF
 from fnmatch import fnmatch
 import os
+import pickle
 
+weapons_options = ['de lepel', 'de vork', 'het mes', 'de pen', 'het boek', 'het keyboard',
+             'de sleutel', 'het kussen', 'de kleerhanger', 'de jas', 'de sleutel',
+             'het potlood', 'de schaar', 'het schilmesje', 'de schoen', 'het bierflesje',
+             'de beker', 'de bezem', 'de handdoek', 'de zeep', 'het beeldje',
+             'de klok', 'het touw', 'de washand', 'de corona sneltest', 'een vies koekje']
 
-weapons_options = ['lepel', 'vork', 'mes', 'pen', 'boek',
-             'sleutel', 'kussen', 'kleerhanger', 'jas',
-             'potlood', 'schaar', 'schilmesje', 'schoen',
-             'beker', 'bezem', 'handdoek', 'zeep', 'beeldje',
-             'klok', 'touw', 'washand', 'corona sneltest', 'vies koekje']
 locations_options = ['achtertuin', 'woonkamer', 'keuken', 'gang',
              'studeer', 'zolder', 'badkamer', 'overloop', 
              'voortuin', 'slaapkamer 1', 'slaapkamer 2',
              'slaapkamer 3', 'slaapkamer 4', 'wc', 'bijkeuken']
 
 image_dir = 'Images/'
-
-gui_input = create_GUI.gui_input()
-if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
-    emails_all = gui_input['emails'].split('\n')
-    emails = list(filter(None, emails_all)) 
-    locations = gui_input['locations']
-    weapons = gui_input['weapons']
-    nr_killers = int(gui_input['nr_killers'])
-    knowledge = gui_input['knowledge']
-    knowledge_people = gui_input['knowledge_people']
-    max_persons = int(gui_input['max_persons'])
 
 def choose_the_murder(emails, locations, weapons, nr_killers):
     murder = {'emails': '', 'location': '', 'weapon': ''}
@@ -60,16 +50,34 @@ def choose_the_murder(emails, locations, weapons, nr_killers):
     remaining_items['weapons'] = remaining_weapons
     return murder, remaining_items
 
+def filter_substring(sublist, substring):
+    return [item for item in sublist if substring not in item]
+
 #TODO enters in mail stoppen!
 def send_murder_emails(murder, murder_itemlist, weapons, emails, locations, murder_emails):
+    dict_murderemails = {}
     for email_adress in murder['emails']:
         extra_info = murder_itemlist[0]
-        extra_info_str = ', '.join(extra_info)
+
+        extra_info_sub = filter_substring(extra_info, "@")
+
+        # Some people will get additional info later
+        info_later = False
+        no_info = len(extra_info_sub)
+        if no_info<3:
+            info_later = True
+        dict_murderemails[email_adress] = {
+                                        'extra_info': extra_info, 'murder_emails':murder_emails, 'knowledge?':knowledge,
+                                        'nr_killers':nr_killers, 'weapons':weapons, 'locations':locations, 'emails':emails,
+                                        'info_later?':info_later
+                                           }
+
+        extra_info_str = ', '.join(extra_info_sub)
         del murder_itemlist[0]
         message = f'Gegroet inwoner van Loppersum, \
 \n \n \
-Jij bent een moordenaar! Zoek het wapen, je mede moordenaars \
-(er zijn in totaal {nr_killers} moordenaars) en de locatie zodat je de \
+Jij bent een moordenaar! Zoek het wapen, je mede moordenaar(s) \
+(er zijn in totaal {nr_killers} moordenaar(s)) en de locatie zodat je de \
 moord geheim kan houden! Wat jij verder nog weet, is dat de moord niet gepleegd wordt in/met/door: \n \
 {extra_info_str}. \
 \n \
@@ -79,22 +87,39 @@ Dit zijn alle locaties: \n \
 {locations} \n \
 Dit zijn alle emails: \n \
 {emails}. '
+        if info_later:
+            f'Op dit moment heb je nog maar {no_info} bijlages aan informatie dat je hebt en kan laten zien. \
+            Dit betekent dat je later nog een email krijgt met extra informatie. \n'
         if knowledge == 'Ja':
             murder_emails_str = ', '.join(murder_emails)
             knowledge_info = f'Als moordenaar weet jij nog iets meer, namelijk alle moordenaars. Dit zijn alle moordenaars: {murder_emails_str}'
             message = message + knowledge_info
-        attachments = [image_dir + s + '.pdf' for s in extra_info]
+        attachments = [image_dir + s + '.pdf' for s in extra_info_sub]
         send_email(email_adress, message, attachments = attachments)
+    return dict_murderemails
         
 def send_detective_emails(remaining_items, other_itemlist, weapons, emails, locations, other_emails):
-    for email_ad in other_emails:
+    dict_detectiveemails = {}
+    for email_adress in other_emails:
         extra_info = other_itemlist[0]
-        extra_info_str = ', '.join(extra_info)
+        extra_info_sub = filter_substring(extra_info, "@")
+
+        # Some people will get additional info later
+        info_later = False
+        no_info = len(extra_info_sub)
+        if no_info<3:
+            info_later = True
+
+        dict_detectiveemails[email_adress] = {
+            'extra_info': extra_info, 'nr_killers':nr_killers, 'weapons':weapons,
+            'locations':locations, 'emails':emails, 'info_later?':info_later
+            }
+        extra_info_str = ', '.join(extra_info_sub)
         del other_itemlist[0]
         message = f'Gegroet inwoner van Loppersum, \
 \n \n \
-Jij bent geen moordenaar, zoek de {nr_killers} moordenaars in Loppersum! \
-Verder moet je het wapen en de locatie weten om zo de moordenaars te pakken! \
+Jij bent geen moordenaar, zoek de {nr_killers} moordenaar(s) in Loppersum! \
+Verder moet je het wapen en de locatie weten om zo de moordenaar(s) te pakken! \
 Wat jij verder nog weet, is dat de moord niet gepleegd is in/met/door: \n \
 {extra_info_str}. \
 \n \
@@ -104,8 +129,13 @@ Dit zijn alle locaties: \n \
 {locations} \n \
 Dit zijn alle emails: \n \
 {emails}.'
-        attachments = [image_dir +s + '.pdf' for s in extra_info]
-        send_email(email_ad, message, attachments = attachments)
+        if info_later:
+            f'Op dit moment heb je nog maar {no_info} bijlages aan informatie dat je hebt en kan laten zien. \
+            Dit betekent dat je later nog een email krijgt met extra informatie. \n'
+        attachments = [image_dir +s + '.pdf' for s in extra_info_sub]
+        send_email(email_adress, message, attachments = attachments)
+    return dict_detectiveemails
+
 
 def flatten(full_list):
     return sum(full_list, [])
@@ -226,7 +256,7 @@ def save_image(name, sentence):
 
 def create_sentence(name):
     if name in weapons_options:
-        sentence = 'Het moordwapen is niet de/het ' + name
+        sentence = 'Het moordwapen is niet ' + name
     elif name in locations_options:
         sentence = 'De locatie van de moord is niet de ' + name
     else:
@@ -249,29 +279,61 @@ def delete_files(directory, extension):
             if fnmatch(file, '*.' + extension):
                 os.remove(os.path.join(dirpath, file))
 
+def save_dict_info(dict_murderemails, dict_detectiveemails):
+    parent_dir = 'Secret/'
+    with open(parent_dir+'dict_murder.pickle', 'wb') as handle:
+        pickle.dump(dict_murderemails, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(parent_dir+'dict_detective.pickle', 'wb') as handle:
+        pickle.dump(dict_detectiveemails, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-murder, remaining_items = choose_the_murder(emails, locations, weapons, nr_killers)
-other_emails = list(set(emails) - set(murder['emails']))
-murder_emails = murder['emails']
-murder_weapon = murder['weapon']
-murder_location = murder['location']
+# Function to process each phrase and remove specified words
+def process_phrase(phrase):
+    words = phrase.split()
+    return ' '.join(word for word in words if word not in words_to_remove)
 
-all_pdfs_names = flatten(list(remaining_items.values()))
-for name in all_pdfs_names:
-    sentence = create_sentence(name)
-    save_image(name, sentence)
+# The following code will only be executed when this file is run directly, not when imported as a module
+if __name__ == "__main__":
+    delete_files(image_dir, 'pdf')
+    delete_files('Secret/', 'pickle')
+    delete_files('Secret/', 'xlsx')
 
-murder_itemlist, other_itemlist = create_murder_list(remaining_items)
+    gui_input = create_GUI.gui_input()
+    if (gui_input['event'] == 'Submit') and (gui_input['exception'] == 'None'):
+        emails_all = gui_input['emails'].split('\n')
+        emails = list(filter(None, emails_all)) 
+        locations = gui_input['locations']
+        weapons = gui_input['weapons']
+        
+        # Create a new list without the specified words
+        # Words to be removed
+        words_to_remove = ['de', 'het', 'een']
+        weapons_filt = [process_phrase(phrase) for phrase in weapons]
+        
+        nr_killers = int(gui_input['nr_killers'])
+        knowledge = gui_input['knowledge']
+        knowledge_people = gui_input['knowledge_people']
+        max_persons = int(gui_input['max_persons'])
 
-other_itemlist = shuffle_remaining_items(other_itemlist, max_persons)
-murder_itemlist = shuffle_remaining_items(murder_itemlist, max_persons+1)
-emails_str = ', '.join(emails)
-locations_str = ', '.join(locations)
-weapons_str = ', '.join(weapons)
-send_murder_emails(murder, murder_itemlist, weapons_str, emails_str, locations_str, murder_emails)
-send_detective_emails(remaining_items, other_itemlist, weapons_str, emails_str, locations_str, other_emails)
-df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
-save_murder(df_murder)
-delete_files(image_dir, 'pdf')
+    murder, remaining_items = choose_the_murder(emails, locations, weapons, nr_killers)
+    other_emails = list(set(emails) - set(murder['emails']))
+    murder_emails = murder['emails']
+    murder_weapon = murder['weapon']
+    murder_location = murder['location']
 
+    all_pdfs_names = flatten(list(remaining_items.values()))
+    for name in all_pdfs_names:
+        sentence = create_sentence(name)
+        save_image(name, sentence)
+    murder_itemlist, other_itemlist = create_murder_list(remaining_items)
+    other_itemlist = shuffle_remaining_items(other_itemlist, max_persons)
+    murder_itemlist = shuffle_remaining_items(murder_itemlist, max_persons+1)
+    emails_str = ', '.join(emails)
+    locations_str = ', '.join(locations)
+    weapons_str = ', '.join(weapons_filt)
+    
+    dict_murderemails = send_murder_emails(murder, murder_itemlist, weapons_str, emails_str, locations_str, murder_emails)
+    dict_detectiveemails = send_detective_emails(remaining_items, other_itemlist, weapons_str, emails_str, locations_str, other_emails)
+    df_murder = extract_murder(murder_emails, murder_weapon, murder_location)
+    save_murder(df_murder)
+    save_dict_info(dict_murderemails, dict_detectiveemails)
 
